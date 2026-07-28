@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(claude-api)",
+      "Skill(claude-api:*)",
+      "mcp__767e9232-f8b9-4ef1-955f-3df36116f462__search_threads"
+    ]
+  }
+}
