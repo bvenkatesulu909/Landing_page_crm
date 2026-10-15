@@ -1,0 +1,8 @@
+# Netlify deploys only the web pages (copied into dist/) plus the function in
+# netlify/functions/. The Python files are for local development and MCP.
+[build]
+  command = "mkdir -p dist && cp index.html landing-page.html dist/"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"

@@ -19,6 +19,8 @@ A modern, responsive landing page with a contact form for collecting customer de
 - `server.py` - Python backend that serves the page and stores submissions in `customers.db`
 - `mcp_server.py` - MCP server exposing the customer database as tools
 - `.mcp.json` - Registers the MCP server with Claude Code for this project
+- `netlify/functions/customers.mjs` - The `/api/customers` endpoint for the Netlify deployment (stores data in Netlify Blobs)
+- `netlify.toml`, `package.json` - Netlify build settings and function dependencies
 
 ## How to Use
 
@@ -71,6 +73,13 @@ Settings (environment variables): `HOST` (default `127.0.0.1`), `PORT` (default 
 | `add_customer` | Add a customer (same validation as the website form) |
 | `customer_stats` | Total submissions, last 24 hours, last 7 days, latest submission |
 
+By default the tools use the local `customers.db`. To use the live Netlify site instead, set these environment variables before starting Claude Code:
+
+| Variable | Value |
+|---|---|
+| `CUSTOMERS_API_URL` | Your site URL, e.g. `https://your-site.netlify.app` |
+| `CUSTOMERS_ADMIN_TOKEN` | The same value as `ADMIN_TOKEN` in Netlify |
+
 ### Setup
 
 Create a virtual environment and install the MCP SDK (one time):
@@ -80,7 +89,7 @@ python -m venv .venv
 ```
 
 ```bash
-.venv/Scripts/python.exe -m pip install -r requirements.txt
+.venv/Scripts/python.exe -m pip install -r requirements-mcp.txt
 ```
 
 On macOS or Linux use `.venv/bin/python` instead, and change `command` in `.mcp.json` to match.
@@ -90,6 +99,20 @@ On macOS or Linux use `.venv/bin/python` instead, and change `command` in `.mcp.
 `.mcp.json` already registers the server as `landing-page-customers`. Open this folder in Claude Code and approve the server when asked; then you can ask things like "how many customers signed up this week?" or "find the customer from Hyderabad".
 
 To use it from another MCP client (e.g. Claude Desktop), point it at the virtual environment's Python with `mcp_server.py` as the argument, using absolute paths.
+
+## Deploying to Netlify
+
+Netlify serves `index.html` and runs `netlify/functions/customers.mjs` as the `/api/customers` endpoint, storing submissions in [Netlify Blobs](https://docs.netlify.com/build/data-and-storage/netlify-blobs/). The Python files are not used on Netlify.
+
+1. In Netlify, choose **Add new project → Import an existing project → GitHub** and pick `Landing_page_crm`. The build settings come from `netlify.toml`.
+2. In **Project configuration → Environment variables**, add `ADMIN_TOKEN` with a long random value. It protects the customer list.
+3. Deploy. Every push to `main` redeploys automatically.
+
+To list customers on the live site:
+
+```bash
+curl -H "X-Admin-Token: your-admin-token" https://your-site.netlify.app/api/customers
+```
 
 ## Customization
 

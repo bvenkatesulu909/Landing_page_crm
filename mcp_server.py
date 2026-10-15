@@ -1,36 +1,85 @@
-"""MCP server for the landing page's customer database.
+"""MCP server for the landing page's customer data.
 
 Gives MCP clients (Claude Code, Claude Desktop, ...) tools to read and add the
-customer details collected by the landing page contact form. It uses the same
-SQLite database and validation rules as server.py, so anything submitted on
-the website is visible here and vice versa.
+customer details collected by the landing page contact form.
+
+It works against one of two backends:
+  * Local (default): the SQLite database written by server.py.
+  * Live site: set CUSTOMERS_API_URL (e.g. https://your-site.netlify.app) and
+    ADMIN_TOKEN, and it uses the deployed /api/customers endpoint instead.
 
 Run (stdio transport, started by the MCP client):
     .venv/Scripts/python.exe mcp_server.py      # Windows
     .venv/bin/python mcp_server.py              # macOS / Linux
 """
 
+import json
+import os
 import sqlite3
+import urllib.error
+import urllib.request
 from datetime import datetime, timedelta, timezone
 
 from mcp.server.fastmcp import FastMCP
 
 from server import DB_PATH, init_db, validate
 
+API_URL = os.environ.get("CUSTOMERS_API_URL", "").rstrip("/")
+ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "")
 MAX_LIMIT = 100
 
 mcp = FastMCP("landing-page-customers")
 
 
-def connect():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+# ---------- Storage: live site API or local SQLite ----------
+
+def api_request(method, payload=None):
+    req = urllib.request.Request(
+        f"{API_URL}/api/customers",
+        method=method,
+        data=json.dumps(payload).encode("utf-8") if payload is not None else None,
+        headers={"Content-Type": "application/json", "X-Admin-Token": ADMIN_TOKEN},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            return json.load(resp)
+    except urllib.error.HTTPError as e:
+        if e.code == 401:
+            raise ValueError("The live site rejected the admin token. Check ADMIN_TOKEN.") from None
+        raise ValueError(f"Live site returned HTTP {e.code}: {e.read().decode('utf-8', 'replace')[:300]}") from None
+    except urllib.error.URLError as e:
+        raise ValueError(f"Could not reach {API_URL}: {e.reason}") from None
+
+
+def load_customers():
+    """All customers, newest first."""
+    if API_URL:
+        return api_request("GET")["customers"]
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute("SELECT * FROM customers ORDER BY id DESC").fetchall()
+    return [dict(r) for r in rows]
+
+
+def save_customer(clean):
+    if API_URL:
+        return api_request("POST", clean)["customer"]
+
+    created_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    with sqlite3.connect(DB_PATH) as conn:
+        cur = conn.execute(
+            "INSERT INTO customers (name, phone, email, address, created_at) VALUES (?, ?, ?, ?, ?)",
+            (clean["name"], clean["phone"], clean["email"], clean["address"], created_at),
+        )
+    return {"id": cur.lastrowid, **clean, "created_at": created_at}
 
 
 def clamp_limit(limit):
     return max(1, min(int(limit), MAX_LIMIT))
 
+
+# ---------- Tools ----------
 
 @mcp.tool()
 def list_customers(limit: int = 20, offset: int = 0) -> dict:
@@ -40,13 +89,9 @@ def list_customers(limit: int = 20, offset: int = 0) -> dict:
         limit: Number of customers to return (1-100).
         offset: Number of customers to skip, for paging.
     """
-    with connect() as conn:
-        total = conn.execute("SELECT COUNT(*) FROM customers").fetchone()[0]
-        rows = conn.execute(
-            "SELECT * FROM customers ORDER BY id DESC LIMIT ? OFFSET ?",
-            (clamp_limit(limit), max(0, int(offset))),
-        ).fetchall()
-    return {"total": total, "customers": [dict(r) for r in rows]}
+    customers = load_customers()
+    start = max(0, int(offset))
+    return {"total": len(customers), "customers": customers[start:start + clamp_limit(limit)]}
 
 
 @mcp.tool()
@@ -57,36 +102,29 @@ def search_customers(query: str, limit: int = 20) -> dict:
         query: Text to look for, e.g. "gmail.com", "Bengaluru" or part of a name.
         limit: Maximum number of results (1-100).
     """
-    query = query.strip()
-    if not query:
+    needle = query.strip().lower()
+    if not needle:
         raise ValueError("query must not be empty")
 
-    pattern = "%" + query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
-    with connect() as conn:
-        rows = conn.execute(
-            """
-            SELECT * FROM customers
-            WHERE name LIKE :p ESCAPE '\\' OR phone LIKE :p ESCAPE '\\'
-               OR email LIKE :p ESCAPE '\\' OR address LIKE :p ESCAPE '\\'
-            ORDER BY id DESC LIMIT :limit
-            """,
-            {"p": pattern, "limit": clamp_limit(limit)},
-        ).fetchall()
-    return {"count": len(rows), "customers": [dict(r) for r in rows]}
+    matches = [
+        c for c in load_customers()
+        if any(needle in str(c.get(field, "")).lower() for field in ("name", "phone", "email", "address"))
+    ]
+    matches = matches[:clamp_limit(limit)]
+    return {"count": len(matches), "customers": matches}
 
 
 @mcp.tool()
-def get_customer(customer_id: int) -> dict:
-    """Get one customer by their ID.
+def get_customer(customer_id: str) -> dict:
+    """Get one customer by their ID (as shown in list or search results).
 
     Args:
-        customer_id: The customer's numeric ID.
+        customer_id: The customer's ID.
     """
-    with connect() as conn:
-        row = conn.execute("SELECT * FROM customers WHERE id = ?", (customer_id,)).fetchone()
-    if row is None:
-        raise ValueError(f"No customer with id {customer_id}")
-    return dict(row)
+    for customer in load_customers():
+        if str(customer["id"]) == str(customer_id).strip():
+            return customer
+    raise ValueError(f"No customer with id {customer_id}")
 
 
 @mcp.tool()
@@ -102,14 +140,7 @@ def add_customer(name: str, phone: str, email: str, address: str) -> dict:
     clean, errors = validate({"name": name, "phone": phone, "email": email, "address": address})
     if errors:
         raise ValueError("Invalid customer details: " + "; ".join(f"{k}: {v}" for k, v in errors.items()))
-
-    created_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    with connect() as conn:
-        cur = conn.execute(
-            "INSERT INTO customers (name, phone, email, address, created_at) VALUES (?, ?, ?, ?, ?)",
-            (clean["name"], clean["phone"], clean["email"], clean["address"], created_at),
-        )
-    return {"id": cur.lastrowid, **clean, "created_at": created_at}
+    return save_customer(clean)
 
 
 @mcp.tool()
@@ -118,20 +149,17 @@ def customer_stats() -> dict:
     now = datetime.now(timezone.utc)
     day_ago = (now - timedelta(days=1)).isoformat(timespec="seconds")
     week_ago = (now - timedelta(days=7)).isoformat(timespec="seconds")
-    with connect() as conn:
-        total, last_24h, last_7d, latest = conn.execute(
-            """
-            SELECT COUNT(*),
-                   COALESCE(SUM(created_at >= ?), 0),
-                   COALESCE(SUM(created_at >= ?), 0),
-                   MAX(created_at)
-            FROM customers
-            """,
-            (day_ago, week_ago),
-        ).fetchone()
-    return {"total": total, "last_24_hours": last_24h, "last_7_days": last_7d, "latest_submission": latest}
+    times = [c["created_at"] for c in load_customers()]
+    return {
+        "source": API_URL or "local database",
+        "total": len(times),
+        "last_24_hours": sum(t >= day_ago for t in times),
+        "last_7_days": sum(t >= week_ago for t in times),
+        "latest_submission": max(times, default=None),
+    }
 
 
 if __name__ == "__main__":
-    init_db()
+    if not API_URL:
+        init_db()
     mcp.run()

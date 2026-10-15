@@ -3,7 +3,11 @@
     "landing-page-customers": {
       "type": "stdio",
       "command": ".venv/Scripts/python.exe",
-      "args": ["mcp_server.py"]
+      "args": ["mcp_server.py"],
+      "env": {
+        "CUSTOMERS_API_URL": "${CUSTOMERS_API_URL:-}",
+        "ADMIN_TOKEN": "${CUSTOMERS_ADMIN_TOKEN:-}"
+      }
     }
   }
 }

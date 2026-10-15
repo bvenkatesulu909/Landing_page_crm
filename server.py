@@ -135,7 +135,8 @@ class Handler(BaseHTTPRequestHandler):
                 "INSERT INTO customers (name, phone, email, address, created_at) VALUES (?, ?, ?, ?, ?)",
                 (clean["name"], clean["phone"], clean["email"], clean["address"], created_at),
             )
-        self.send_json(201, {"id": cur.lastrowid, "message": "Customer details saved."})
+        customer = {"id": cur.lastrowid, **clean, "created_at": created_at}
+        self.send_json(201, {"id": cur.lastrowid, "customer": customer, "message": "Customer details saved."})
 
     def list_customers(self):
         token = self.headers.get("X-Admin-Token", "")
