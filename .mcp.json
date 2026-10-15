@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "landing-page-customers": {
+      "type": "stdio",
+      "command": ".venv/Scripts/python.exe",
+      "args": ["mcp_server.py"]
+    }
+  }
+}
