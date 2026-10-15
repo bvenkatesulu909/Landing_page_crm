@@ -10,12 +10,14 @@ A modern, responsive landing page with a contact form for collecting customer de
 - ✅ Form validation
 - 🎯 Success message on submission
 - 💾 Customer details saved to a SQLite database by a small Python backend
+- 🔐 Admin page to view, search and export customers
 - 🤖 MCP server so Claude (or any MCP client) can look up and add customers
 
 ## Files
 
 - `index.html` - Full landing page (navbar, hero, stats, features, how it works, testimonials, contact form, footer)
 - `landing-page.html` - Standalone contact form page
+- `admin.html` - Password-protected admin page listing all customers, with search and CSV download
 - `server.py` - Python backend that serves the page and stores submissions in `customers.db`
 - `mcp_server.py` - MCP server exposing the customer database as tools
 - `.mcp.json` - Registers the MCP server with Claude Code for this project
@@ -38,19 +40,19 @@ Submissions are stored in `customers.db` (SQLite) next to `server.py`. The file 
 
 ## Viewing Saved Customers
 
-Start the server with an admin token:
+Open `/admin.html` on the site, e.g. http://localhost:8000/admin.html or https://loquacious-dragon-b3a19b.netlify.app/admin.html, and sign in with the admin token. You get every customer in a table with search, Refresh, and **Download CSV**. The token is kept only for that browser tab and is cleared when you sign out.
+
+The admin token is the `ADMIN_TOKEN` environment variable: set it in Netlify under **Project configuration → Environment variables** (then redeploy), or locally when starting the server:
 
 ```bash
 ADMIN_TOKEN=choose-a-long-secret python server.py
 ```
 
-Then request the list with the same token:
+Without `ADMIN_TOKEN` set, nobody can sign in. You can also fetch the list directly:
 
 ```bash
 curl -H "X-Admin-Token: choose-a-long-secret" http://localhost:8000/api/customers
 ```
-
-Without `ADMIN_TOKEN` set, the list endpoint is disabled. You can also open `customers.db` with any SQLite viewer.
 
 ## API
 

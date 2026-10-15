@@ -34,6 +34,7 @@ STATIC_FILES = {
     "/": ("index.html", "text/html; charset=utf-8"),
     "/index.html": ("index.html", "text/html; charset=utf-8"),
     "/landing-page.html": ("landing-page.html", "text/html; charset=utf-8"),
+    "/admin.html": ("admin.html", "text/html; charset=utf-8"),
 }
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")

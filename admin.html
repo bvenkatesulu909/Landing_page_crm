@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Nova Admin — Customers</title>
+    <style>
+        :root {
+            --primary: #667eea;
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --text: #1f2333;
+            --muted: #636a80;
+            --bg: #f6f7fc;
+            --border: #e4e6f0;
+            --radius: 12px;
+            --shadow: 0 10px 40px rgba(31, 35, 51, 0.12);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text);
+            background: var(--bg);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            border: none;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-primary {
+            background: var(--gradient);
+            color: #fff;
+        }
+
+        .btn-light {
+            background: #fff;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        input {
+            width: 100%;
+            padding: 11px 14px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .error {
+            color: #c62828;
+            font-size: 14px;
+            margin-top: 12px;
+        }
+
+        /* ---------- Login ---------- */
+        .login {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            background: var(--gradient);
+        }
+
+        .login-card {
+            background: #fff;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 40px 32px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-card h1 {
+            font-size: 24px;
+            margin-bottom: 6px;
+        }
+
+        .login-card p {
+            color: var(--muted);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .login-card label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .login-card .btn {
+            width: 100%;
+            margin-top: 16px;
+            padding: 12px;
+            font-size: 15px;
+        }
+
+        /* ---------- Dashboard ---------- */
+        .topbar {
+            background: #fff;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .topbar-inner,
+        .content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .topbar-inner {
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .logo small {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--muted);
+            -webkit-text-fill-color: var(--muted);
+            margin-left: 6px;
+        }
+
+        .content {
+            padding-top: 28px;
+            padding-bottom: 40px;
+        }
+
+        .head {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .head h1 {
+            font-size: 26px;
+        }
+
+        .head p {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .toolbar input {
+            flex: 1;
+            min-width: 220px;
+            background: #fff;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        th {
+            background: #fafbff;
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: #fafbff;
+        }
+
+        td.nowrap {
+            white-space: nowrap;
+        }
+
+        td a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        td a:hover {
+            text-decoration: underline;
+        }
+
+        .empty {
+            text-align: center;
+            color: var(--muted);
+            padding: 48px 16px;
+        }
+
+        /* Phones: each customer becomes a stacked card */
+        @media (max-width: 680px) {
+            thead {
+                display: none;
+            }
+
+            table,
+            tbody,
+            tr,
+            td {
+                display: block;
+                width: 100%;
+            }
+
+            tbody tr {
+                padding: 12px 16px;
+                border-bottom: 1px solid var(--border);
+            }
+
+            td {
+                border: none;
+                padding: 4px 0;
+                display: flex;
+                gap: 12px;
+            }
+
+            td::before {
+                content: attr(data-label);
+                flex: 0 0 80px;
+                color: var(--muted);
+                font-size: 12px;
+                font-weight: 600;
+                text-transform: uppercase;
+                padding-top: 2px;
+            }
+
+            td.nowrap {
+                white-space: normal;
+            }
+
+            .head h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login -->
+    <section class="login" id="loginView">
+        <form class="login-card" id="loginForm">
+            <h1>Admin sign in</h1>
+            <p>Enter the admin token to view customer details.</p>
+            <label for="token">Admin token</label>
+            <input type="password" id="token" autocomplete="current-password" required>
+            <button type="submit" class="btn btn-primary" id="loginButton">Sign in</button>
+            <div class="error hidden" id="loginError" role="alert"></div>
+        </form>
+    </section>
+
+    <!-- Dashboard -->
+    <div class="hidden" id="dashboardView">
+        <header class="topbar">
+            <div class="topbar-inner">
+                <span class="logo">Nova<small>Admin</small></span>
+                <button class="btn btn-light" id="logoutButton">Sign out</button>
+            </div>
+        </header>
+
+        <main class="content">
+            <div class="head">
+                <div>
+                    <h1>Customers</h1>
+                    <p id="summary">Loading…</p>
+                </div>
+            </div>
+
+            <div class="toolbar">
+                <input type="search" id="search" placeholder="Search by name, phone, email or address" aria-label="Search customers">
+                <button class="btn btn-light" id="refreshButton">Refresh</button>
+                <button class="btn btn-primary" id="csvButton">Download CSV</button>
+            </div>
+
+            <div class="error hidden" id="loadError" role="alert"></div>
+
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                                <th>Address</th>
+                                <th>Submitted</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rows"></tbody>
+                    </table>
+                </div>
+                <div class="empty hidden" id="empty"></div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const TOKEN_KEY = 'nova-admin-token';
+        const COLUMNS = [
+            ['name', 'Name'],
+            ['phone', 'Phone'],
+            ['email', 'Email'],
+            ['address', 'Address'],
+            ['created_at', 'Submitted'],
+        ];
+
+        const $ = (id) => document.getElementById(id);
+        let customers = [];
+        let shown = [];
+
+        // The token lives only for this browser tab and is cleared on sign out.
+        function getToken() {
+            try { return sessionStorage.getItem(TOKEN_KEY) || ''; } catch { return ''; }
+        }
+
+        function setToken(value) {
+            try {
+                if (value) sessionStorage.setItem(TOKEN_KEY, value);
+                else sessionStorage.removeItem(TOKEN_KEY);
+            } catch { /* storage unavailable: token is kept in memory only */ }
+            memoryToken = value;
+        }
+
+        let memoryToken = getToken();
+
+        function showView(loggedIn) {
+            $('loginView').classList.toggle('hidden', loggedIn);
+            $('dashboardView').classList.toggle('hidden', !loggedIn);
+        }
+
+        function formatDate(iso) {
+            const date = new Date(iso);
+            if (Number.isNaN(date.getTime())) return iso || '';
+            return date.toLocaleString(undefined, {
+                day: 'numeric', month: 'short', year: 'numeric',
+                hour: 'numeric', minute: '2-digit',
+            });
+        }
+
+        async function fetchCustomers(token) {
+            const response = await fetch('/api/customers', {
+                headers: { 'X-Admin-Token': token },
+                cache: 'no-store',
+            });
+            if (response.status === 401) {
+                const err = new Error('unauthorized');
+                err.unauthorized = true;
+                throw err;
+            }
+            if (!response.ok) throw new Error(`Server returned ${response.status}`);
+            const data = await response.json();
+            return data.customers || [];
+        }
+
+        // Customer data comes from the public form, so it is only ever
+        // inserted with textContent / attributes, never as HTML.
+        function cell(row, label, text, href) {
+            const td = document.createElement('td');
+            td.dataset.label = label;
+            if (href) {
+                const a = document.createElement('a');
+                a.href = href;
+                a.textContent = text;
+                td.appendChild(a);
+            } else {
+                td.textContent = text;
+            }
+            row.appendChild(td);
+            return td;
+        }
+
+        function render() {
+            const query = $('search').value.trim().toLowerCase();
+            shown = !query ? customers : customers.filter((c) =>
+                ['name', 'phone', 'email', 'address'].some((key) =>
+                    String(c[key] || '').toLowerCase().includes(query)));
+
+            const tbody = $('rows');
+            tbody.replaceChildren();
+
+            shown.forEach((c, i) => {
+                const row = document.createElement('tr');
+                cell(row, '#', String(i + 1));
+                cell(row, 'Name', c.name || '');
+                cell(row, 'Phone', c.phone || '', c.phone ? `tel:${c.phone.replace(/[^\d+]/g, '')}` : '').classList.add('nowrap');
+                cell(row, 'Email', c.email || '', c.email ? `mailto:${c.email}` : '');
+                cell(row, 'Address', c.address || '');
+                cell(row, 'Submitted', formatDate(c.created_at)).classList.add('nowrap');
+                tbody.appendChild(row);
+            });
+
+            const total = customers.length;
+            $('summary').textContent = query
+                ? `${shown.length} of ${total} customer${total === 1 ? '' : 's'} match "${$('search').value.trim()}"`
+                : `${total} customer${total === 1 ? '' : 's'} in total`;
+
+            const empty = $('empty');
+            empty.classList.toggle('hidden', shown.length > 0);
+            empty.textContent = total === 0 ? 'No customers yet.' : 'No customers match your search.';
+            $('csvButton').disabled = shown.length === 0;
+        }
+
+        async function load() {
+            $('loadError').classList.add('hidden');
+            $('refreshButton').disabled = true;
+            $('refreshButton').textContent = 'Loading…';
+            try {
+                customers = await fetchCustomers(memoryToken);
+                render();
+            } catch (err) {
+                if (err.unauthorized) {
+                    signOut('Your session has expired or the token changed. Please sign in again.');
+                    return;
+                }
+                $('loadError').textContent = 'Could not load customers. Please try again.';
+                $('loadError').classList.remove('hidden');
+            } finally {
+                $('refreshButton').disabled = false;
+                $('refreshButton').textContent = 'Refresh';
+            }
+        }
+
+        function signOut(message) {
+            setToken('');
+            customers = [];
+            $('rows').replaceChildren();
+            $('search').value = '';
+            $('token').value = '';
+            const loginError = $('loginError');
+            loginError.textContent = message || '';
+            loginError.classList.toggle('hidden', !message);
+            showView(false);
+        }
+
+        // Prefix cells that a spreadsheet would treat as a formula.
+        function csvCell(value) {
+            let text = String(value ?? '');
+            if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+            return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+        }
+
+        function downloadCsv() {
+            const header = ['ID', ...COLUMNS.map(([, label]) => label)];
+            const lines = [header.map(csvCell).join(',')];
+            shown.forEach((c) => {
+                lines.push([c.id, ...COLUMNS.map(([key]) => c[key])].map(csvCell).join(','));
+            });
+
+            // BOM so Excel opens the file as UTF-8.
+            const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `customers-${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        $('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const token = $('token').value.trim();
+            if (!token) return;
+
+            const button = $('loginButton');
+            button.disabled = true;
+            button.textContent = 'Signing in…';
+            $('loginError').classList.add('hidden');
+
+            try {
+                customers = await fetchCustomers(token);
+                setToken(token);
+                $('token').value = '';
+                showView(true);
+                render();
+            } catch (err) {
+                $('loginError').textContent = err.unauthorized
+                    ? 'That token is not correct.'
+                    : 'Could not reach the server. Please try again.';
+                $('loginError').classList.remove('hidden');
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Sign in';
+            }
+        });
+
+        $('search').addEventListener('input', render);
+        $('refreshButton').addEventListener('click', load);
+        $('csvButton').addEventListener('click', downloadCsv);
+        $('logoutButton').addEventListener('click', () => signOut());
+
+        if (memoryToken) {
+            showView(true);
+            load();
+        } else {
+            showView(false);
+        }
+    </script>
+</body>
+</html>
