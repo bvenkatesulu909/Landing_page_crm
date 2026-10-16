@@ -81,25 +81,46 @@ def clamp_limit(limit):
 
 # ---------- Tools ----------
 
+NEW_LEAD = "New lead"
+STATUSES = ("Payment completed", "Dues pending", "Processing transaction", "Contacted", NEW_LEAD)
+
+
+def status_of(customer):
+    """Website form sign-ups have no payment details yet; they count as new leads."""
+    return customer.get("status") or NEW_LEAD
+
+
 @mcp.tool()
-def list_customers(limit: int = 20, offset: int = 0) -> dict:
-    """List customers who submitted the landing page form, newest first.
+def list_customers(limit: int = 20, offset: int = 0, status: str = "", source: str = "") -> dict:
+    """List customers, newest first, optionally filtered by payment status and source.
 
     Args:
         limit: Number of customers to return (1-100).
         offset: Number of customers to skip, for paging.
+        status: Only this status: "Payment completed", "Dues pending",
+            "Processing transaction", "Contacted" or "New lead". Empty for all.
+        source: "real" (website form), "demo" (generated test data) or empty for both.
     """
-    customers = load_customers()
+    if status and status not in STATUSES:
+        raise ValueError(f"status must be one of: {', '.join(STATUSES)}")
+    if source not in ("", "real", "demo"):
+        raise ValueError('source must be "real", "demo" or empty')
+
+    customers = [
+        c for c in load_customers()
+        if (not status or status_of(c) == status)
+        and (not source or bool(c.get("is_demo")) == (source == "demo"))
+    ]
     start = max(0, int(offset))
     return {"total": len(customers), "customers": customers[start:start + clamp_limit(limit)]}
 
 
 @mcp.tool()
 def search_customers(query: str, limit: int = 20) -> dict:
-    """Search customers by name, phone, email or address (case-insensitive, partial match).
+    """Search customers by name, phone, email, address or transaction ID (case-insensitive, partial match).
 
     Args:
-        query: Text to look for, e.g. "gmail.com", "Bengaluru" or part of a name.
+        query: Text to look for, e.g. "gmail.com", "Bengaluru", part of a name or "TXN2608".
         limit: Maximum number of results (1-100).
     """
     needle = query.strip().lower()
@@ -108,7 +129,10 @@ def search_customers(query: str, limit: int = 20) -> dict:
 
     matches = [
         c for c in load_customers()
-        if any(needle in str(c.get(field, "")).lower() for field in ("name", "phone", "email", "address"))
+        if any(needle in str(value).lower() for value in (
+            c.get("name", ""), c.get("phone", ""), c.get("email", ""), c.get("address", ""),
+            (c.get("last_transaction") or {}).get("id", ""),
+        ))
     ]
     matches = matches[:clamp_limit(limit)]
     return {"count": len(matches), "customers": matches}
@@ -145,17 +169,30 @@ def add_customer(name: str, phone: str, email: str, address: str) -> dict:
 
 @mcp.tool()
 def customer_stats() -> dict:
-    """Summary of form submissions: total, last 24 hours, last 7 days and the latest submission time."""
+    """Summary of customers and payments: totals, sign-ups over time, counts per status,
+    money collected and outstanding (in INR), overdue dues and transactions in progress."""
     now = datetime.now(timezone.utc)
     day_ago = (now - timedelta(days=1)).isoformat(timespec="seconds")
     week_ago = (now - timedelta(days=7)).isoformat(timespec="seconds")
-    times = [c["created_at"] for c in load_customers()]
+    today = now.date().isoformat()
+    customers = load_customers()
+    times = [c["created_at"] for c in customers]
+    processing = [c for c in customers if status_of(c) == "Processing transaction"]
     return {
         "source": API_URL or "local database",
-        "total": len(times),
+        "total": len(customers),
+        "real": sum(not c.get("is_demo") for c in customers),
+        "demo": sum(bool(c.get("is_demo")) for c in customers),
         "last_24_hours": sum(t >= day_ago for t in times),
         "last_7_days": sum(t >= week_ago for t in times),
         "latest_submission": max(times, default=None),
+        "by_status": {s: sum(status_of(c) == s for c in customers) for s in STATUSES},
+        "collected_inr": sum(c.get("amount_paid") or 0 for c in customers),
+        "outstanding_inr": sum(c.get("amount_due") or 0 for c in customers),
+        "overdue_customers": sum(
+            (c.get("amount_due") or 0) > 0 and (c.get("due_date") or "9999") < today for c in customers
+        ),
+        "processing_inr": sum((c.get("last_transaction") or {}).get("amount") or 0 for c in processing),
     }
 
 

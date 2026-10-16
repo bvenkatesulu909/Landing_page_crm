@@ -267,6 +267,122 @@
             padding: 48px 16px;
         }
 
+        /* ---------- Summary cards ---------- */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px 18px;
+        }
+
+        .stat span {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat strong {
+            display: block;
+            font-size: 24px;
+            margin-top: 4px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .stat small {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        select {
+            padding: 10px 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            background: #fff;
+            color: var(--text);
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* ---------- Status badges ---------- */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge-paid { background: #e7f6ec; color: #1b6e36; }
+        .badge-dues { background: #fdecec; color: #b42318; }
+        .badge-processing { background: #fff4e5; color: #9a5b00; }
+        .badge-contacted { background: #eaf0ff; color: #3445b4; }
+        .badge-new { background: #f1f2f6; color: #4a5068; }
+        .badge-demo { background: #f1f2f6; color: var(--muted); font-weight: 500; margin-left: 6px; }
+
+        td.num {
+            text-align: right;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+
+        th.num {
+            text-align: right;
+        }
+
+        .overdue {
+            color: #b42318;
+            font-weight: 600;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .txn small {
+            display: block;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        /* ---------- Pager ---------- */
+        .pager {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 16px;
+            border-top: 1px solid var(--border);
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .pager div {
+            display: flex;
+            gap: 8px;
+        }
+
+        @media (max-width: 900px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
         /* Phones: each customer becomes a stacked card */
         @media (max-width: 680px) {
             thead {
@@ -307,6 +423,18 @@
                 white-space: normal;
             }
 
+            td.num {
+                text-align: left;
+            }
+
+            .stat strong {
+                font-size: 20px;
+            }
+
+            .pager {
+                flex-direction: column;
+            }
+
             .head h1 {
                 font-size: 22px;
             }
@@ -343,8 +471,28 @@
                 </div>
             </div>
 
+            <div class="stats" id="stats">
+                <div class="stat"><span>Customers</span><strong id="statCount">–</strong><small id="statCountNote"></small></div>
+                <div class="stat"><span>Collected</span><strong id="statPaid">–</strong><small id="statPaidNote"></small></div>
+                <div class="stat"><span>Outstanding dues</span><strong id="statDue">–</strong><small id="statDueNote"></small></div>
+                <div class="stat"><span>Processing</span><strong id="statProcessing">–</strong><small id="statProcessingNote"></small></div>
+            </div>
+
             <div class="toolbar">
-                <input type="search" id="search" placeholder="Search by name, phone, email or address" aria-label="Search customers">
+                <input type="search" id="search" placeholder="Search name, phone, email, address or transaction ID" aria-label="Search customers">
+                <select id="statusFilter" aria-label="Filter by status">
+                    <option value="">All statuses</option>
+                    <option>Payment completed</option>
+                    <option>Dues pending</option>
+                    <option>Processing transaction</option>
+                    <option>Contacted</option>
+                    <option>New lead</option>
+                </select>
+                <select id="sourceFilter" aria-label="Filter by source">
+                    <option value="">Real + demo</option>
+                    <option value="real">Real only</option>
+                    <option value="demo">Demo only</option>
+                </select>
                 <button class="btn btn-light" id="refreshButton">Refresh</button>
                 <button class="btn btn-primary" id="csvButton">Download CSV</button>
             </div>
@@ -357,34 +505,76 @@
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>Name</th>
-                                <th>Phone</th>
-                                <th>Email</th>
-                                <th>Address</th>
-                                <th>Submitted</th>
+                                <th>Customer</th>
+                                <th>Contact</th>
+                                <th>Status</th>
+                                <th>Plan</th>
+                                <th class="num">Total</th>
+                                <th class="num">Paid</th>
+                                <th class="num">Due</th>
+                                <th>Due date</th>
+                                <th>Last transaction</th>
+                                <th>Joined</th>
                             </tr>
                         </thead>
                         <tbody id="rows"></tbody>
                     </table>
                 </div>
                 <div class="empty hidden" id="empty"></div>
+                <div class="pager hidden" id="pager">
+                    <span id="pageInfo"></span>
+                    <div>
+                        <button class="btn btn-light" id="prevPage">Previous</button>
+                        <button class="btn btn-light" id="nextPage">Next</button>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
     <script>
         const TOKEN_KEY = 'nova-admin-token';
-        const COLUMNS = [
-            ['name', 'Name'],
-            ['phone', 'Phone'],
-            ['email', 'Email'],
-            ['address', 'Address'],
-            ['created_at', 'Submitted'],
+        const PAGE_SIZE = 50;
+        const NEW_LEAD = 'New lead';
+        const BADGES = {
+            'Payment completed': 'badge-paid',
+            'Dues pending': 'badge-dues',
+            'Processing transaction': 'badge-processing',
+            'Contacted': 'badge-contacted',
+            [NEW_LEAD]: 'badge-new',
+        };
+        const CSV_COLUMNS = [
+            ['ID', (c) => c.id],
+            ['Name', (c) => c.name],
+            ['Phone', (c) => c.phone],
+            ['Email', (c) => c.email],
+            ['Address', (c) => c.address],
+            ['Status', (c) => statusOf(c)],
+            ['Plan', (c) => c.plan],
+            ['Total (INR)', (c) => c.total_amount],
+            ['Paid (INR)', (c) => c.amount_paid],
+            ['Due (INR)', (c) => c.amount_due],
+            ['Due date', (c) => c.due_date],
+            ['Last transaction ID', (c) => c.last_transaction?.id],
+            ['Transaction date', (c) => c.last_transaction?.date],
+            ['Transaction amount (INR)', (c) => c.last_transaction?.amount],
+            ['Payment method', (c) => c.last_transaction?.method],
+            ['Transaction status', (c) => c.last_transaction?.status],
+            ['Source', (c) => (c.is_demo ? 'Demo' : 'Website form')],
+            ['Joined', (c) => c.created_at],
         ];
 
         const $ = (id) => document.getElementById(id);
+        const inr = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+        const num = (n) => n.toLocaleString('en-IN');
+        const today = new Date().toISOString().slice(0, 10);
         let customers = [];
         let shown = [];
+        let page = 0;
+
+        // Website form sign-ups have no payment details yet; they count as new leads.
+        const statusOf = (c) => c.status || NEW_LEAD;
+        const isOverdue = (c) => c.amount_due > 0 && c.due_date && c.due_date < today;
 
         // The token lives only for this browser tab and is cleared on sign out.
         function getToken() {
@@ -406,14 +596,16 @@
             $('dashboardView').classList.toggle('hidden', !loggedIn);
         }
 
-        function formatDate(iso) {
+        function formatDate(iso, withTime = true) {
+            if (!iso) return '';
             const date = new Date(iso);
-            if (Number.isNaN(date.getTime())) return iso || '';
-            return date.toLocaleString(undefined, {
-                day: 'numeric', month: 'short', year: 'numeric',
-                hour: 'numeric', minute: '2-digit',
-            });
+            if (Number.isNaN(date.getTime())) return iso;
+            const options = { day: 'numeric', month: 'short', year: 'numeric' };
+            if (withTime) Object.assign(options, { hour: 'numeric', minute: '2-digit' });
+            return date.toLocaleString('en-IN', options);
         }
+
+        const money = (value) => (typeof value === 'number' ? inr.format(value) : '–');
 
         async function fetchCustomers(token) {
             const response = await fetch('/api/customers', {
@@ -431,51 +623,131 @@
         }
 
         // Customer data comes from the public form, so it is only ever
-        // inserted with textContent / attributes, never as HTML.
-        function cell(row, label, text, href) {
-            const td = document.createElement('td');
+        // inserted as text, never as HTML.
+        function el(tag, text, className) {
+            const node = document.createElement(tag);
+            if (text != null) node.textContent = text;
+            if (className) node.className = className;
+            return node;
+        }
+
+        function cell(row, label, text) {
+            const td = el('td', text);
             td.dataset.label = label;
-            if (href) {
-                const a = document.createElement('a');
-                a.href = href;
-                a.textContent = text;
-                td.appendChild(a);
-            } else {
-                td.textContent = text;
-            }
             row.appendChild(td);
             return td;
         }
 
-        function render() {
+        function link(text, href) {
+            const a = el('a', text);
+            a.href = href;
+            return a;
+        }
+
+        function block(text, className = 'muted') {
+            const small = el('small', text, className);
+            small.style.display = 'block';
+            return small;
+        }
+
+        function applyFilters() {
             const query = $('search').value.trim().toLowerCase();
-            shown = !query ? customers : customers.filter((c) =>
-                ['name', 'phone', 'email', 'address'].some((key) =>
-                    String(c[key] || '').toLowerCase().includes(query)));
+            const status = $('statusFilter').value;
+            const source = $('sourceFilter').value;
+
+            shown = customers.filter((c) => {
+                if (status && statusOf(c) !== status) return false;
+                if (source === 'real' && c.is_demo) return false;
+                if (source === 'demo' && !c.is_demo) return false;
+                if (!query) return true;
+                return [c.name, c.phone, c.email, c.address, c.last_transaction?.id]
+                    .some((v) => String(v || '').toLowerCase().includes(query));
+            });
+            page = 0;
+            render();
+        }
+
+        function renderStats() {
+            const sum = (list, get) => list.reduce((total, c) => total + (get(c) || 0), 0);
+            const demo = shown.filter((c) => c.is_demo).length;
+            const withDues = shown.filter((c) => c.amount_due > 0);
+            const overdue = shown.filter(isOverdue).length;
+            const processing = shown.filter((c) => statusOf(c) === 'Processing transaction');
+            const fullyPaid = shown.filter((c) => statusOf(c) === 'Payment completed').length;
+
+            $('statCount').textContent = num(shown.length);
+            $('statCountNote').textContent = `${num(shown.length - demo)} real · ${num(demo)} demo`;
+            $('statPaid').textContent = inr.format(sum(shown, (c) => c.amount_paid));
+            $('statPaidNote').textContent = `${num(fullyPaid)} fully paid`;
+            $('statDue').textContent = inr.format(sum(withDues, (c) => c.amount_due));
+            $('statDueNote').textContent = `${num(withDues.length)} customers · ${num(overdue)} overdue`;
+            $('statProcessing').textContent = num(processing.length);
+            $('statProcessingNote').textContent = `${inr.format(sum(processing, (c) => c.last_transaction?.amount))} in progress`;
+        }
+
+        function render() {
+            renderStats();
+
+            const pages = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
+            page = Math.max(0, Math.min(page, pages - 1));
+            const start = page * PAGE_SIZE;
+            const slice = shown.slice(start, start + PAGE_SIZE);
 
             const tbody = $('rows');
             tbody.replaceChildren();
 
-            shown.forEach((c, i) => {
+            slice.forEach((c, i) => {
                 const row = document.createElement('tr');
-                cell(row, '#', String(i + 1));
-                cell(row, 'Name', c.name || '');
-                cell(row, 'Phone', c.phone || '', c.phone ? `tel:${c.phone.replace(/[^\d+]/g, '')}` : '').classList.add('nowrap');
-                cell(row, 'Email', c.email || '', c.email ? `mailto:${c.email}` : '');
-                cell(row, 'Address', c.address || '');
-                cell(row, 'Submitted', formatDate(c.created_at)).classList.add('nowrap');
+                cell(row, '#', String(start + i + 1));
+
+                const name = cell(row, 'Customer');
+                name.append(el('strong', c.name || ''));
+                if (c.is_demo) name.append(el('span', 'demo', 'badge badge-demo'));
+
+                const contact = cell(row, 'Contact');
+                if (c.phone) contact.append(link(c.phone, `tel:${c.phone.replace(/[^\d+]/g, '')}`));
+                if (c.email) contact.append(el('br'), link(c.email, `mailto:${c.email}`));
+                if (c.address) contact.append(block(c.address));
+
+                const status = statusOf(c);
+                cell(row, 'Status').append(el('span', status, `badge ${BADGES[status] || 'badge-new'}`));
+                cell(row, 'Plan', c.plan || '–');
+                cell(row, 'Total', money(c.total_amount)).classList.add('num');
+                cell(row, 'Paid', money(c.amount_paid)).classList.add('num');
+                cell(row, 'Due', money(c.amount_due)).classList.add('num');
+
+                const due = cell(row, 'Due date', c.due_date ? formatDate(c.due_date, false) : '–');
+                due.classList.add('nowrap');
+                if (isOverdue(c)) {
+                    due.classList.add('overdue');
+                    due.append(block('Overdue', ''));
+                }
+
+                const t = c.last_transaction;
+                const txn = cell(row, 'Transaction', t ? `${t.status} · ${money(t.amount)}` : '–');
+                txn.classList.add('txn');
+                if (t) txn.append(el('small', `${t.method} · ${t.id}`), el('small', formatDate(t.date)));
+
+                cell(row, 'Joined', formatDate(c.created_at)).classList.add('nowrap');
                 tbody.appendChild(row);
             });
 
             const total = customers.length;
-            $('summary').textContent = query
-                ? `${shown.length} of ${total} customer${total === 1 ? '' : 's'} match "${$('search').value.trim()}"`
-                : `${total} customer${total === 1 ? '' : 's'} in total`;
+            $('summary').textContent = shown.length !== total
+                ? `Showing ${num(shown.length)} of ${num(total)} customers`
+                : `${num(total)} customers in total`;
 
             const empty = $('empty');
             empty.classList.toggle('hidden', shown.length > 0);
-            empty.textContent = total === 0 ? 'No customers yet.' : 'No customers match your search.';
+            empty.textContent = total === 0 ? 'No customers yet.' : 'No customers match these filters.';
             $('csvButton').disabled = shown.length === 0;
+
+            $('pager').classList.toggle('hidden', shown.length <= PAGE_SIZE);
+            $('pageInfo').textContent = shown.length
+                ? `${num(start + 1)}–${num(start + slice.length)} of ${num(shown.length)}`
+                : '';
+            $('prevPage').disabled = page === 0;
+            $('nextPage').disabled = page >= pages - 1;
         }
 
         async function load() {
@@ -484,7 +756,7 @@
             $('refreshButton').textContent = 'Loading…';
             try {
                 customers = await fetchCustomers(memoryToken);
-                render();
+                applyFilters();
             } catch (err) {
                 if (err.unauthorized) {
                     signOut('Your session has expired or the token changed. Please sign in again.');
@@ -501,8 +773,11 @@
         function signOut(message) {
             setToken('');
             customers = [];
+            shown = [];
             $('rows').replaceChildren();
             $('search').value = '';
+            $('statusFilter').value = '';
+            $('sourceFilter').value = '';
             $('token').value = '';
             const loginError = $('loginError');
             loginError.textContent = message || '';
@@ -518,21 +793,20 @@
         }
 
         function downloadCsv() {
-            const header = ['ID', ...COLUMNS.map(([, label]) => label)];
-            const lines = [header.map(csvCell).join(',')];
+            const lines = [CSV_COLUMNS.map(([label]) => csvCell(label)).join(',')];
             shown.forEach((c) => {
-                lines.push([c.id, ...COLUMNS.map(([key]) => c[key])].map(csvCell).join(','));
+                lines.push(CSV_COLUMNS.map(([, get]) => csvCell(get(c))).join(','));
             });
 
             // BOM so Excel opens the file as UTF-8.
             const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
             const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `customers-${new Date().toISOString().slice(0, 10)}.csv`;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `customers-${today}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
             URL.revokeObjectURL(url);
         }
 
@@ -551,7 +825,7 @@
                 setToken(token);
                 $('token').value = '';
                 showView(true);
-                render();
+                applyFilters();
             } catch (err) {
                 $('loginError').textContent = err.unauthorized
                     ? 'That token is not correct.'
@@ -563,10 +837,14 @@
             }
         });
 
-        $('search').addEventListener('input', render);
+        $('search').addEventListener('input', applyFilters);
+        $('statusFilter').addEventListener('change', applyFilters);
+        $('sourceFilter').addEventListener('change', applyFilters);
         $('refreshButton').addEventListener('click', load);
         $('csvButton').addEventListener('click', downloadCsv);
         $('logoutButton').addEventListener('click', () => signOut());
+        $('prevPage').addEventListener('click', () => { page -= 1; render(); window.scrollTo(0, 0); });
+        $('nextPage').addEventListener('click', () => { page += 1; render(); window.scrollTo(0, 0); });
 
         if (memoryToken) {
             showView(true);

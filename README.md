@@ -17,7 +17,8 @@ A modern, responsive landing page with a contact form for collecting customer de
 
 - `index.html` - Full landing page (navbar, hero, stats, features, how it works, testimonials, contact form, footer)
 - `landing-page.html` - Standalone contact form page
-- `admin.html` - Password-protected admin page listing all customers, with search and CSV download
+- `admin.html` - Password-protected admin page: customers with payment status, totals, filters, paging and CSV download
+- `scripts/demo_customers.py` - Generates, imports or removes demo customers with payment details
 - `server.py` - Python backend that serves the page and stores submissions in `customers.db`
 - `mcp_server.py` - MCP server exposing the customer database as tools
 - `.mcp.json` - Registers the MCP server with Claude Code for this project
@@ -63,17 +64,38 @@ curl -H "X-Admin-Token: choose-a-long-secret" http://localhost:8000/api/customer
 
 Settings (environment variables): `HOST` (default `127.0.0.1`), `PORT` (default `8000`), `DB_PATH`, `ADMIN_TOKEN`.
 
+## Demo Customers
+
+`scripts/demo_customers.py` creates 1,000 fake customers with payment details so the admin page and MCP tools have realistic data. Each one has a status (Payment completed, Dues pending, Processing transaction or Contacted), a plan, total / paid / due amounts in INR, a due date and the latest transaction (ID, date, amount, method and state). Emails use the reserved `example.com` domain and every record is marked `"is_demo": true`.
+
+Customers who sign up through the website form have no payment details and show as **New lead**.
+
+```bash
+python scripts/demo_customers.py generate          # write demo_customers.json to inspect
+python scripts/demo_customers.py import            # add them to the live site
+python scripts/demo_customers.py delete            # remove every demo customer
+```
+
+`import` and `delete` read the admin token from `CUSTOMERS_ADMIN_TOKEN`. Importing again replaces the same batches rather than duplicating them, and `delete` only ever removes demo batches, never website sign-ups.
+
+On Netlify, demo customers are stored in batches of 250 (`batch/demo-01` ... `batch/demo-04`) through two admin-only endpoints:
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/customers/import` | Store a batch: `{ "batch": "demo-01", "customers": [...] }` |
+| `DELETE` | `/api/customers/demo` | Remove all demo batches |
+
 ## MCP Server
 
 `mcp_server.py` connects MCP clients such as Claude Code to the same `customers.db` the landing page writes to, so customers submitted on the website are available to Claude straight away.
 
 | Tool | What it does |
 |---|---|
-| `list_customers` | List customers, newest first (`limit`, `offset`) |
-| `search_customers` | Find customers by part of their name, phone, email or address |
+| `list_customers` | List customers, newest first (`limit`, `offset`, optional `status` and `source` = real/demo) |
+| `search_customers` | Find customers by part of their name, phone, email, address or transaction ID |
 | `get_customer` | Get one customer by ID |
 | `add_customer` | Add a customer (same validation as the website form) |
-| `customer_stats` | Total submissions, last 24 hours, last 7 days, latest submission |
+| `customer_stats` | Totals, real vs demo, counts per status, collected / outstanding / processing amounts, overdue customers |
 
 By default the tools use the local `customers.db`. To use the live Netlify site instead, set these environment variables before starting Claude Code:
 
