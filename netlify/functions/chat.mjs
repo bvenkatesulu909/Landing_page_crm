@@ -309,6 +309,9 @@ async function reply({ chat, message, send, signal }) {
                 system: SYSTEM,
                 tools: TOOLS,
                 messages,
+                // Chat replies do not need extended reasoning. Adaptive thinking sometimes
+                // returned only a thinking block and no answer, so it is switched off here.
+                thinking: { type: "disabled" },
                 output_config: { effort: "low" },
             },
             { signal },
@@ -327,6 +330,25 @@ async function reply({ chat, message, send, signal }) {
 
         const response = await stream.finalMessage();
         await addSpend(response.usage, model).catch((err) => console.error("could not record chat spending:", err?.message));
+
+        // Streamed text events can arrive empty, but the final message always carries the text.
+        // Use it when the stream gave nothing, so a reply is never lost.
+        const finalText = response.content.filter((b) => b.type === "text").map((b) => b.text).join("");
+        if (!roundText.trim() && finalText.trim()) {
+            const separator = replyText && !/\s$/.test(replyText) ? "\n\n" : "";
+            replyText += separator + finalText;
+            roundText += finalText;
+            send({ type: "text", text: separator + finalText });
+        }
+        // Still nothing to say and no tool call: record what came back, so the cause shows in the logs.
+        if (!roundText.trim() && !response.content.some((b) => b.type === "tool_use")) {
+            console.warn("chat: empty reply", JSON.stringify({
+                model,
+                stop_reason: response.stop_reason,
+                blocks: response.content.map((b) => b.type),
+                output_tokens: response.usage?.output_tokens,
+            }));
+        }
 
         // Declined before writing anything: run the same request again on the fallback model,
         // and keep using it for the rest of this reply.
