@@ -5,3 +5,4 @@ dist/
 node_modules/
 .netlify/
 demo_customers.json
+customers_export.csv

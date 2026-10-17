@@ -17,6 +17,7 @@ import json
 import os
 import sqlite3
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
@@ -193,6 +194,98 @@ def customer_stats() -> dict:
             (c.get("amount_due") or 0) > 0 and (c.get("due_date") or "9999") < today for c in customers
         ),
         "processing_inr": sum((c.get("last_transaction") or {}).get("amount") or 0 for c in processing),
+    }
+
+
+# ---------- Chat conversations (live site only) ----------
+
+CHATS_NOTE = "Chat conversations are stored on the live site. Set CUSTOMERS_API_URL to use the chat tools."
+
+
+def chats_api(path):
+    """GET a chat endpoint on the live site. Returns None when a conversation is not found."""
+    if not API_URL:
+        raise ValueError(CHATS_NOTE)
+    req = urllib.request.Request(f"{API_URL}{path}", headers={"X-Admin-Token": ADMIN_TOKEN})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.load(resp)
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return None
+        if e.code == 401:
+            raise ValueError("The live site rejected the admin token. Check ADMIN_TOKEN.") from None
+        raise ValueError(f"Live site returned HTTP {e.code}.") from None
+    except urllib.error.URLError as e:
+        raise ValueError(f"Could not reach {API_URL}: {e.reason}") from None
+
+
+def transcript_text(chat):
+    return " ".join(t.get("text", "") for t in chat.get("transcript", []))
+
+
+@mcp.tool()
+def list_chats(limit: int = 20, query: str = "", lead_only: bool = False, callback_only: bool = False) -> dict:
+    """List recent website chat conversations, newest first.
+
+    Args:
+        limit: Number of conversations to return (1-100).
+        query: Only conversations whose messages contain this text, e.g. "Enterprise" or "price".
+            Searches the 200 most recent conversations.
+        lead_only: Only conversations where the customer's details were saved.
+        callback_only: Only conversations where a callback was requested.
+    """
+    data = chats_api("/api/chats")
+    summaries = data["chats"]
+    if lead_only:
+        summaries = [c for c in summaries if c.get("lead_id")]
+    if callback_only:
+        summaries = [c for c in summaries if c.get("callback_requested")]
+    if query.strip():
+        needle = query.strip().lower()
+        matched = []
+        for summary in summaries:
+            # Each transcript is one request, so the search stays within the recent list.
+            found = chats_api(f"/api/chats/{urllib.parse.quote(summary['id'])}")
+            if found and needle in transcript_text(found["chat"]).lower():
+                matched.append(summary)
+        summaries = matched
+    summaries = summaries[:clamp_limit(limit)]
+    return {"count": len(summaries), "chats": summaries}
+
+
+@mcp.tool()
+def get_chat(chat_id: str) -> dict:
+    """Get one chat conversation with its full transcript, the lead it created and any callback request.
+
+    Args:
+        chat_id: The conversation's ID, as shown by list_chats.
+    """
+    found = chats_api(f"/api/chats/{urllib.parse.quote(chat_id.strip())}")
+    if found is None:
+        raise ValueError(f"No conversation with id {chat_id}")
+    return found["chat"]
+
+
+@mcp.tool()
+def chat_stats() -> dict:
+    """Summary of website chats: total, last 24 hours, last 7 days, how many captured a lead or asked
+    for a callback, and the lead rate. Rates are based on the 200 most recent conversations."""
+    data = chats_api("/api/chats")
+    summaries = data["chats"]
+    now = datetime.now(timezone.utc)
+    day_ago = (now - timedelta(days=1)).isoformat(timespec="seconds")
+    week_ago = (now - timedelta(days=7)).isoformat(timespec="seconds")
+    started = [c["started_at"] for c in summaries]
+    leads = sum(1 for c in summaries if c.get("lead_id"))
+    return {
+        "total": data["total"],
+        "last_24_hours": sum(t >= day_ago for t in started),
+        "last_7_days": sum(t >= week_ago for t in started),
+        "leads_captured": leads,
+        "callbacks_requested": sum(1 for c in summaries if c.get("callback_requested")),
+        "lead_rate_percent": round(100 * leads / len(summaries), 1) if summaries else 0,
+        "latest_chat": max(started, default=None),
     }
 
 

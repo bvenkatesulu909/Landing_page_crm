@@ -383,6 +383,184 @@
             }
         }
 
+        /* ---------- Tabs ---------- */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 22px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab {
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 10px 14px;
+            font: inherit;
+            font-weight: 600;
+            color: var(--muted);
+            cursor: pointer;
+        }
+
+        .tab[aria-selected="true"] {
+            color: var(--text);
+            border-bottom-color: var(--primary);
+        }
+
+        /* ---------- Conversations ---------- */
+        .chat-list {
+            list-style: none;
+        }
+
+        .chat-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 6px 16px;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            background: #fff;
+            cursor: pointer;
+        }
+
+        .chat-row:last-child {
+            border-bottom: none;
+        }
+
+        .chat-row:hover,
+        .chat-row:focus-visible {
+            background: #fafbff;
+            outline: none;
+        }
+
+        .chat-row:focus-visible {
+            box-shadow: inset 3px 0 0 var(--primary);
+        }
+
+        .chat-row strong {
+            font-size: 14px;
+        }
+
+        .chat-row .meta {
+            color: var(--muted);
+            font-size: 12.5px;
+        }
+
+        .chat-row .badges {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            align-items: flex-start;
+        }
+
+        .chat-row .preview {
+            grid-column: 1 / -1;
+            color: var(--muted);
+            font-size: 14px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .badge-lead { background: #e7f6ec; color: #1b6e36; }
+        .badge-callback { background: #fff4e5; color: #9a5b00; }
+
+        .muted-note {
+            color: var(--muted);
+            font-size: 13px;
+            margin-top: 12px;
+        }
+
+        /* Transcript window */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(23, 26, 41, 0.5);
+            display: grid;
+            place-items: center;
+            padding: 16px;
+            z-index: 50;
+        }
+
+        .modal-card {
+            background: #fff;
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 640px;
+            max-height: 86vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow);
+        }
+
+        .modal-head,
+        .modal-foot {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 20px;
+        }
+
+        .modal-head {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-head h2 {
+            font-size: 17px;
+        }
+
+        .modal-foot {
+            justify-content: flex-end;
+            border-top: 1px solid var(--border);
+        }
+
+        .modal-body {
+            padding: 16px 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: var(--bg-alt);
+        }
+
+        .t-msg {
+            max-width: 82%;
+            padding: 9px 13px;
+            border-radius: 14px;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .t-msg.user {
+            align-self: flex-end;
+            background: var(--gradient);
+            color: #fff;
+        }
+
+        .t-msg.bot {
+            align-self: flex-start;
+            background: #fff;
+            border: 1px solid var(--border);
+        }
+
+        .t-time {
+            font-size: 11px;
+            color: var(--muted);
+            align-self: center;
+            margin-bottom: 4px;
+        }
+
+        .t-note {
+            background: #fff;
+            border: 1px dashed var(--border);
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
         /* Phones: each customer becomes a stacked card */
         @media (max-width: 680px) {
             thead {
@@ -464,6 +642,12 @@
         </header>
 
         <main class="content">
+            <nav class="tabs" role="tablist" aria-label="Admin sections">
+                <button type="button" class="tab" role="tab" id="tabBtnCustomers" aria-selected="true" aria-controls="tabCustomers" data-tab="customers">Customers</button>
+                <button type="button" class="tab" role="tab" id="tabBtnChats" aria-selected="false" aria-controls="tabChats" data-tab="chats">Chats</button>
+            </nav>
+
+            <section id="tabCustomers" role="tabpanel" aria-labelledby="tabBtnCustomers">
             <div class="head">
                 <div>
                     <h1>Customers</h1>
@@ -529,7 +713,40 @@
                     </div>
                 </div>
             </div>
+            </section>
+
+            <section id="tabChats" role="tabpanel" aria-labelledby="tabBtnChats" class="hidden">
+                <div class="head">
+                    <div>
+                        <h1>Conversations</h1>
+                        <p id="chatsSummary">Loading…</p>
+                    </div>
+                    <button class="btn btn-light" id="chatsRefresh">Refresh</button>
+                </div>
+
+                <div class="error hidden" id="chatsError" role="alert"></div>
+
+                <div class="card">
+                    <ul class="chat-list" id="chatList"></ul>
+                    <div class="empty hidden" id="chatsEmpty"></div>
+                </div>
+                <p class="muted-note">Conversations are kept for 90 days. Select one to read it.</p>
+            </section>
         </main>
+    </div>
+
+    <!-- Transcript window -->
+    <div class="modal hidden" id="chatModal" role="dialog" aria-modal="true" aria-labelledby="chatModalTitle">
+        <div class="modal-card">
+            <div class="modal-head">
+                <h2 id="chatModalTitle">Conversation</h2>
+                <button class="btn btn-light" id="chatModalClose">Close</button>
+            </div>
+            <div class="modal-body" id="chatModalBody"></div>
+            <div class="modal-foot">
+                <button class="btn btn-primary hidden" id="chatModalCustomer">Open customer</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -774,6 +991,11 @@
             setToken('');
             customers = [];
             shown = [];
+            chats = null;
+            chatsTotal = 0;
+            $('chatList').replaceChildren();
+            closeChat();
+            showTab('customers');
             $('rows').replaceChildren();
             $('search').value = '';
             $('statusFilter').value = '';
@@ -845,6 +1067,174 @@
         $('logoutButton').addEventListener('click', () => signOut());
         $('prevPage').addEventListener('click', () => { page -= 1; render(); window.scrollTo(0, 0); });
         $('nextPage').addEventListener('click', () => { page += 1; render(); window.scrollTo(0, 0); });
+
+        // ---- Chats tab ----
+        let chats = null;          // null until the first load
+        let chatsTotal = 0;
+        let openChatId = null;
+
+        function showTab(name) {
+            const chatsOn = name === 'chats';
+            $('tabCustomers').classList.toggle('hidden', chatsOn);
+            $('tabChats').classList.toggle('hidden', !chatsOn);
+            $('tabBtnCustomers').setAttribute('aria-selected', String(!chatsOn));
+            $('tabBtnChats').setAttribute('aria-selected', String(chatsOn));
+            if (chatsOn && chats === null) loadChats();
+        }
+
+        async function fetchChatApi(path) {
+            const response = await fetch(path, {
+                headers: { 'X-Admin-Token': memoryToken },
+                cache: 'no-store',
+            });
+            if (response.status === 401) {
+                const err = new Error('unauthorized');
+                err.unauthorized = true;
+                throw err;
+            }
+            if (!response.ok) throw new Error(`Server returned ${response.status}`);
+            return response.json();
+        }
+
+        function renderChats() {
+            const list = $('chatList');
+            list.replaceChildren();
+            const items = chats || [];
+
+            items.forEach((c) => {
+                const row = document.createElement('li');
+                row.className = 'chat-row';
+                row.tabIndex = 0;
+                row.setAttribute('role', 'button');
+                row.setAttribute('aria-label', `Conversation from ${formatDate(c.started_at)}`);
+
+                const left = document.createElement('div');
+                left.append(
+                    el('strong', formatDate(c.started_at)),
+                    document.createElement('br'),
+                    el('span', `${c.turns} message${c.turns === 1 ? '' : 's'} from the visitor`, 'meta'),
+                );
+
+                const badges = document.createElement('div');
+                badges.className = 'badges';
+                if (c.lead_id) badges.append(el('span', 'Lead captured', 'badge badge-lead'));
+                if (c.callback_requested) badges.append(el('span', 'Callback requested', 'badge badge-callback'));
+
+                row.append(left, badges, el('div', c.preview || '(no message)', 'preview'));
+
+                const open = () => openChat(c.id);
+                row.addEventListener('click', open);
+                row.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        open();
+                    }
+                });
+                list.appendChild(row);
+            });
+
+            const empty = $('chatsEmpty');
+            empty.classList.toggle('hidden', items.length > 0);
+            empty.textContent = 'No conversations yet.';
+
+            $('chatsSummary').textContent = chatsTotal > items.length
+                ? `Showing the ${items.length} most recent of ${chatsTotal.toLocaleString('en-IN')} conversations`
+                : `${items.length.toLocaleString('en-IN')} conversation${items.length === 1 ? '' : 's'}, newest first`;
+        }
+
+        async function loadChats() {
+            $('chatsError').classList.add('hidden');
+            $('chatsRefresh').disabled = true;
+            try {
+                const data = await fetchChatApi('/api/chats');
+                chats = data.chats || [];
+                chatsTotal = data.total ?? chats.length;
+                renderChats();
+            } catch (err) {
+                if (err.unauthorized) {
+                    signOut('Your session has expired or the token changed. Please sign in again.');
+                    return;
+                }
+                $('chatsError').textContent = 'Could not load conversations. Please try again.';
+                $('chatsError').classList.remove('hidden');
+            } finally {
+                $('chatsRefresh').disabled = false;
+            }
+        }
+
+        async function openChat(id) {
+            openChatId = id;
+            const body = $('chatModalBody');
+            $('chatModalTitle').textContent = 'Conversation';
+            $('chatModalCustomer').classList.add('hidden');
+            body.replaceChildren(el('div', 'Loading…', 'muted'));
+            $('chatModal').classList.remove('hidden');
+            $('chatModalClose').focus();
+
+            try {
+                const { chat } = await fetchChatApi(`/api/chats/${encodeURIComponent(id)}`);
+                if (openChatId !== id) return; // another conversation was opened meanwhile
+                $('chatModalTitle').textContent = `Conversation · ${formatDate(chat.started_at)}`;
+                body.replaceChildren();
+
+                if (chat.callback) {
+                    body.append(el('div', `Callback requested: ${chat.callback.preferred_time} - ${chat.callback.topic}`, 't-note'));
+                }
+                if (!chat.transcript.length) body.append(el('div', 'No messages.', 'muted'));
+                chat.transcript.forEach((t) => {
+                    body.append(
+                        el('div', t.text || '', `t-msg ${t.from === 'user' ? 'user' : 'bot'}`),
+                        el('div', formatDate(t.at), 't-time'),
+                    );
+                });
+                body.scrollTop = body.scrollHeight;
+
+                if (chat.lead_id) $('chatModalCustomer').classList.remove('hidden');
+            } catch (err) {
+                if (err.unauthorized) {
+                    closeChat();
+                    signOut('Your session has expired or the token changed. Please sign in again.');
+                    return;
+                }
+                body.replaceChildren(el('div', 'Could not load this conversation. Please try again.', 't-note'));
+            }
+        }
+
+        function closeChat() {
+            openChatId = null;
+            $('chatModal').classList.add('hidden');
+        }
+
+        // Jump from a conversation to the customer it created, filtered on the Customers tab.
+        async function openLeadCustomer() {
+            const chat = chats?.find((c) => c.id === openChatId);
+            if (!chat?.lead_id) return;
+            const customer = customers.find((c) => c.id === chat.lead_id);
+            if (!customer) {
+                $('chatModalCustomer').classList.add('hidden');
+                $('chatModalBody').append(el('div', 'This customer is no longer in the list.', 't-note'));
+                return;
+            }
+            closeChat();
+            showTab('customers');
+            $('statusFilter').value = '';
+            $('sourceFilter').value = '';
+            $('search').value = customer.email || customer.name;
+            applyFilters();
+        }
+
+        document.querySelectorAll('.tab').forEach((tab) => {
+            tab.addEventListener('click', () => showTab(tab.dataset.tab));
+        });
+        $('chatsRefresh').addEventListener('click', loadChats);
+        $('chatModalClose').addEventListener('click', closeChat);
+        $('chatModalCustomer').addEventListener('click', openLeadCustomer);
+        $('chatModal').addEventListener('click', (e) => {
+            if (e.target === $('chatModal')) closeChat();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !$('chatModal').classList.contains('hidden')) closeChat();
+        });
 
         if (memoryToken) {
             showView(true);
