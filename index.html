@@ -569,9 +569,432 @@
             transform: none;
         }
 
+        /* ---------- Chat widget ---------- */
+        .chat-launcher {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            z-index: 1000;
+            width: 60px;
+            height: 60px;
+            border: none;
+            border-radius: 50%;
+            background: var(--gradient);
+            color: #fff;
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.45);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .chat-launcher:hover {
+            transform: scale(1.06);
+            box-shadow: 0 10px 28px rgba(102, 126, 234, 0.55);
+        }
+
+        .chat-launcher:focus-visible,
+        .chat-panel button:focus-visible {
+            outline: 3px solid #b9c3ff;
+            outline-offset: 2px;
+        }
+
+        .chat-launcher svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        .chat-launcher .icon-close {
+            display: none;
+        }
+
+        .chat-launcher[aria-expanded="true"] .icon-chat {
+            display: none;
+        }
+
+        .chat-launcher[aria-expanded="true"] .icon-close {
+            display: block;
+        }
+
+        .chat-panel {
+            position: fixed;
+            right: 24px;
+            bottom: 96px;
+            z-index: 1001;
+            width: 380px;
+            height: 600px;
+            max-height: calc(100vh - 120px);
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 16px 48px rgba(31, 35, 51, 0.22);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(16px) scale(0.98);
+            transform-origin: bottom right;
+            transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
+        }
+
+        .chat-panel.open {
+            opacity: 1;
+            visibility: visible;
+            transform: none;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .chat-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: var(--gradient);
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .chat-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.22);
+            display: grid;
+            place-items: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .chat-title {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .chat-title strong {
+            display: block;
+            font-size: 16px;
+        }
+
+        .chat-status {
+            font-size: 12.5px;
+            opacity: 0.9;
+        }
+
+        .chat-status::before {
+            content: "";
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #7cf0a8;
+            margin-right: 6px;
+        }
+
+        .chat-icon-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 50%;
+            background: transparent;
+            color: inherit;
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+
+        .chat-icon-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .chat-header .chat-icon-btn:hover {
+            background: rgba(255, 255, 255, 0.18);
+        }
+
+        .chat-speaker .icon-sound-on,
+        .chat-speaker[aria-pressed="true"] .icon-sound-off {
+            display: none;
+        }
+
+        .chat-speaker[aria-pressed="true"] .icon-sound-on {
+            display: block;
+        }
+
+        .chat-header .chat-speaker[aria-pressed="true"] {
+            background: rgba(255, 255, 255, 0.22);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background: var(--bg-alt);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overscroll-behavior: contain;
+        }
+
+        .chat-msg {
+            max-width: 82%;
+            padding: 10px 14px;
+            border-radius: 16px;
+            font-size: 14.5px;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .chat-msg.bot {
+            align-self: flex-start;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-msg.user {
+            align-self: flex-end;
+            background: var(--gradient);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-msg a {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .chat-typing {
+            align-self: flex-start;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 12px 14px;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-typing span {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--muted);
+            opacity: 0.4;
+            animation: chat-typing 1.2s infinite ease-in-out;
+        }
+
+        .chat-typing span:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+
+        .chat-typing span:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        @keyframes chat-typing {
+            0%, 60%, 100% { opacity: 0.4; transform: translateY(0); }
+            30% { opacity: 1; transform: translateY(-4px); }
+        }
+
+        .chat-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .chat-chip {
+            padding: 7px 12px;
+            border: 1px solid #c9cff5;
+            border-radius: 999px;
+            background: #fff;
+            color: var(--primary);
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .chat-chip:hover {
+            background: #eef0ff;
+        }
+
+        .chat-input-bar {
+            display: flex;
+            align-items: flex-end;
+            gap: 6px;
+            padding: 10px 12px;
+            border-top: 1px solid var(--border);
+            background: #fff;
+            flex-shrink: 0;
+        }
+
+        .chat-input-bar textarea {
+            flex: 1;
+            resize: none;
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 9px 14px;
+            font-family: inherit;
+            font-size: 15px;
+            line-height: 1.4;
+            max-height: 120px;
+            min-height: 42px;
+            transition: border-color 0.2s;
+        }
+
+        .chat-input-bar textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .chat-input-bar .chat-icon-btn {
+            width: 42px;
+            height: 42px;
+            color: var(--muted);
+        }
+
+        .chat-input-bar .chat-icon-btn:hover:not(:disabled) {
+            background: var(--bg-alt);
+        }
+
+        .chat-send {
+            background: var(--gradient) !important;
+            color: #fff !important;
+        }
+
+        .chat-input-bar .chat-mic.listening,
+        .chat-input-bar .chat-mic.listening:hover {
+            background: #e5484d;
+            color: #fff;
+            animation: chat-mic-pulse 1.4s ease-out infinite;
+        }
+
+        @keyframes chat-mic-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(229, 72, 77, 0.55); }
+            100% { box-shadow: 0 0 0 12px rgba(229, 72, 77, 0); }
+        }
+
+        .chat-wave {
+            display: block;
+            width: 100%;
+            height: 32px;
+            background: #fff;
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .chat-wave[hidden] {
+            display: none;
+        }
+
+        .chat-system {
+            align-self: center;
+            max-width: 90%;
+            text-align: center;
+            font-size: 12.5px;
+            color: var(--muted);
+            background: #fff;
+            border: 1px dashed var(--border);
+            border-radius: 10px;
+            padding: 6px 10px;
+        }
+
+        .chat-send .icon-stop,
+        .chat-send.is-stop .icon-send {
+            display: none;
+        }
+
+        .chat-send.is-stop .icon-stop {
+            display: block;
+        }
+
+        .chat-input-bar .chat-icon-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .chat-lang {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            margin-right: 4px;
+        }
+
+        .chat-lang[hidden] {
+            display: none;
+        }
+
+        .chat-lang select {
+            border: none;
+            background: transparent;
+            color: var(--primary);
+            font: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .chat-privacy {
+            display: block;
+            margin-top: 2px;
+            font-size: 11px;
+        }
+
+        .chat-counter {
+            margin-left: 8px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .chat-counter.at-limit {
+            color: #c62828;
+            font-weight: 600;
+        }
+
+        .chat-note {
+            text-align: center;
+            font-size: 11.5px;
+            color: var(--muted);
+            padding: 0 12px 8px;
+            background: #fff;
+            flex-shrink: 0;
+        }
+
+        /* Phones: the panel becomes a full-screen sheet */
+        @media (max-width: 680px) {
+            .chat-launcher {
+                right: 16px;
+                bottom: 16px;
+            }
+
+            .chat-panel {
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                max-height: none;
+                border-radius: 0;
+                transform: translateY(24px);
+            }
+
+            body.chat-open .chat-launcher {
+                display: none;
+            }
+
+            body.chat-open {
+                overflow: hidden;
+            }
+        }
+
         @media (prefers-reduced-motion: reduce) {
             html { scroll-behavior: auto; }
             .reveal { opacity: 1; transform: none; transition: none; }
+            .chat-panel, .chat-panel.open, .chat-launcher { transition: none; }
+            .chat-typing span { animation: none; opacity: 0.7; }
+            .chat-input-bar .chat-mic.listening { animation: none; box-shadow: 0 0 0 3px rgba(229, 72, 77, 0.35); }
         }
 
         /* ---------- Responsive ---------- */
@@ -875,6 +1298,64 @@
         </div>
     </footer>
 
+    <!-- Chat widget: UI only for now; replies are placeholders until /api/chat exists -->
+    <div class="chat-panel" id="chatPanel" role="dialog" aria-labelledby="chatTitle" aria-hidden="true">
+        <header class="chat-header">
+            <div class="chat-avatar" aria-hidden="true">N</div>
+            <div class="chat-title">
+                <strong id="chatTitle">Nova Assistant</strong>
+                <span class="chat-status">Online</span>
+            </div>
+            <button type="button" class="chat-icon-btn chat-speaker" id="chatSpeaker" aria-label="Read replies aloud" aria-pressed="false" title="Read replies aloud" hidden>
+                <svg class="icon-sound-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4V5z"/><path d="M22 9l-6 6M16 9l6 6"/></svg>
+                <svg class="icon-sound-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5L6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+            </button>
+            <button type="button" class="chat-icon-btn" id="chatClose" aria-label="Close chat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+        </header>
+
+        <div class="chat-messages" id="chatMessages" aria-live="polite">
+            <div class="chat-msg bot">Hi! 👋 I'm the Nova assistant. How can I help you today?</div>
+            <div class="chat-chips" id="chatChips">
+                <button type="button" class="chat-chip">See plans</button>
+                <button type="button" class="chat-chip">Talk to sales</button>
+                <button type="button" class="chat-chip">Payment help</button>
+            </div>
+        </div>
+
+        <canvas class="chat-wave" id="chatWave" height="32" aria-hidden="true" hidden></canvas>
+        <form class="chat-input-bar" id="chatForm">
+            <textarea id="chatInput" rows="1" maxlength="1000" placeholder="Type your message…" aria-label="Message"></textarea>
+            <button type="button" class="chat-icon-btn chat-mic" id="chatMic" aria-label="Start voice input" title="Speak your message" aria-pressed="false" hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+            </button>
+            <button type="submit" class="chat-icon-btn chat-send" id="chatSend" aria-label="Send message" disabled>
+                <svg class="icon-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                <svg class="icon-stop" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>
+            </button>
+        </form>
+        <div class="chat-note">
+            <label class="chat-lang" id="chatLangWrap" hidden>
+                <span aria-hidden="true">🌐</span>
+                <select id="chatLang" aria-label="Voice language">
+                    <option value="en-IN">English</option>
+                    <option value="hi-IN">हिन्दी</option>
+                    <option value="te-IN">తెలుగు</option>
+                </select>
+                <span aria-hidden="true">·</span>
+            </label>
+            <span>Enter to send · Shift+Enter for a new line</span>
+            <span class="chat-counter" id="chatCounter" aria-live="polite" hidden></span>
+            <span class="chat-privacy">Conversations are kept for 90 days. We keep the messages you send and any contact details you share.</span>
+        </div>
+    </div>
+
+    <button type="button" class="chat-launcher" id="chatLauncher" aria-label="Open chat" aria-controls="chatPanel" aria-expanded="false">
+        <svg class="icon-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>
+        <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+
     <script>
         // Mobile menu
         const menuToggle = document.getElementById('menuToggle');
@@ -988,6 +1469,561 @@
                 submitButton.textContent = 'Submit';
             }
         });
+
+        // Chat widget (UI only: replies are placeholders until the chat backend exists)
+        const chatLauncher = document.getElementById('chatLauncher');
+        const chatPanel = document.getElementById('chatPanel');
+        const chatMessages = document.getElementById('chatMessages');
+        const chatForm = document.getElementById('chatForm');
+        const chatInput = document.getElementById('chatInput');
+        const chatSend = document.getElementById('chatSend');
+        const chatChips = document.getElementById('chatChips');
+        const chatCounter = document.getElementById('chatCounter');
+        const CHAT_ENDPOINT = '/api/chat';
+        const CHAT_FALLBACK = 'Please try again later. Chat is unavailable right now - you can also use the contact form and our team will call you.';
+
+        // ---- Chat session: kept in this browser so a refresh keeps the conversation ----
+        const CHAT_KEY = 'nova-chat-session';
+        const MAX_MESSAGES = 50;                  // only the latest messages stay on screen and in storage
+        const CHAT_TTL_MS = 24 * 60 * 60 * 1000;  // start a fresh chat after a day without activity
+
+        function newChatId() {
+            if (crypto.randomUUID) return crypto.randomUUID();
+            const bytes = crypto.getRandomValues(new Uint8Array(16));
+            return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function loadChatSession() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(CHAT_KEY));
+                if (saved?.id && Array.isArray(saved.messages) && Date.now() - saved.updatedAt < CHAT_TTL_MS) {
+                    return saved;
+                }
+            } catch { /* storage blocked or corrupt: start fresh */ }
+            return { id: newChatId(), updatedAt: Date.now(), messages: [] };
+        }
+
+        const chatSession = loadChatSession();
+
+        function saveChatSession() {
+            chatSession.messages = chatSession.messages.slice(-MAX_MESSAGES);
+            chatSession.updatedAt = Date.now();
+            try { localStorage.setItem(CHAT_KEY, JSON.stringify(chatSession)); } catch { /* storage blocked */ }
+        }
+        const MAX_CHARS = Number(chatInput.maxLength) || 1000;
+        const COUNTER_FROM = MAX_CHARS - 200;
+        let chatTyping = null;
+        // The reply in progress: aborting it cancels the request to /api/chat.
+        let replyController = null;
+
+        function setChatOpen(open) {
+            chatPanel.classList.toggle('open', open);
+            chatPanel.setAttribute('aria-hidden', String(!open));
+            chatLauncher.setAttribute('aria-expanded', String(open));
+            chatLauncher.setAttribute('aria-label', open ? 'Close chat' : 'Open chat');
+            document.body.classList.toggle('chat-open', open);
+            if (!open) {
+                stopListening();
+                stopSpeaking();
+            }
+            if (open) {
+                setTimeout(() => chatInput.focus(), 50);
+            } else {
+                chatLauncher.focus();
+            }
+        }
+
+        function scrollChatToBottom() {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Removes the oldest messages and notes so at most MAX_MESSAGES stay on screen.
+        function trimChatScreen() {
+            const items = chatMessages.querySelectorAll('.chat-msg, .chat-system');
+            for (let i = 0; i < items.length - MAX_MESSAGES; i++) items[i].remove();
+        }
+
+        function saveChatMessage(text, from) {
+            chatSession.messages.push({ from, text, at: new Date().toISOString() });
+            saveChatSession();
+        }
+
+        function addChatMessage(text, from, { save = true } = {}) {
+            const msg = document.createElement('div');
+            msg.className = `chat-msg ${from}`;
+            msg.textContent = text;
+            // Keep the typing indicator as the last item while the bot is still "typing".
+            chatMessages.insertBefore(msg, chatTyping);
+            trimChatScreen();
+            scrollChatToBottom();
+            if (save) saveChatMessage(text, from);
+            return msg;
+        }
+
+        // Redraw a saved conversation after a refresh (without re-reading it aloud).
+        function restoreChatSession() {
+            if (!chatSession.messages.length) return;
+            chatChips.remove();
+            chatSession.messages.forEach((m) => addChatMessage(m.text, m.from === 'user' ? 'user' : 'bot', { save: false }));
+        }
+
+        function showTyping(show) {
+            if (show && !chatTyping) {
+                chatTyping = document.createElement('div');
+                chatTyping.className = 'chat-typing';
+                chatTyping.setAttribute('role', 'status');
+                chatTyping.setAttribute('aria-label', 'Nova Assistant is typing');
+                chatTyping.innerHTML = '<span></span><span></span><span></span>';
+                chatMessages.appendChild(chatTyping);
+                scrollChatToBottom();
+            } else if (!show && chatTyping) {
+                chatTyping.remove();
+                chatTyping = null;
+            }
+        }
+
+        const isReplying = () => replyController !== null;
+
+        // ➤ while idle (disabled when the box is empty), ■ while the bot is replying.
+        function updateSendButton() {
+            const replying = isReplying();
+            chatSend.classList.toggle('is-stop', replying);
+            chatSend.setAttribute('aria-label', replying ? 'Stop reply' : 'Send message');
+            chatSend.disabled = !replying && chatInput.value.trim() === '';
+        }
+
+        function updateCounter() {
+            const length = chatInput.value.length;
+            chatCounter.hidden = length < COUNTER_FROM;
+            chatCounter.textContent = `${length} / ${MAX_CHARS}`;
+            chatCounter.classList.toggle('at-limit', length >= MAX_CHARS);
+        }
+
+        function resizeChatInput() {
+            chatInput.style.height = 'auto';
+            chatInput.style.height = `${Math.min(chatInput.scrollHeight, 120)}px`;
+            updateSendButton();
+            updateCounter();
+        }
+
+        function stopReply() {
+            if (!isReplying()) return;
+            replyController.abort();
+            showTyping(false);
+            stopSpeaking();
+            chatInput.focus();
+        }
+
+        // Reads the reply from /api/chat: one JSON event per line, shown as it arrives.
+        async function streamReply(text) {
+            const controller = new AbortController();
+            replyController = controller;
+            updateSendButton();
+            showTyping(true);
+
+            let bubble = null;
+            let replyText = '';
+            let failure = null;
+
+            const handle = (event) => {
+                if (event.type === 'text') {
+                    if (!bubble) {
+                        showTyping(false);
+                        bubble = addChatMessage('', 'bot', { save: false });
+                    }
+                    replyText += event.text;
+                    bubble.textContent = replyText;
+                    scrollChatToBottom();
+                } else if (event.type === 'lead_saved') {
+                    addSystemNote('✓ Your details were saved. Our team will call you within 24 hours.');
+                } else if (event.type === 'callback_saved') {
+                    addSystemNote('✓ Callback requested.');
+                } else if (event.type === 'error') {
+                    failure = event.message || CHAT_FALLBACK;
+                }
+            };
+
+            try {
+                const response = await fetch(CHAT_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: chatSession.id, message: text }),
+                    signal: controller.signal,
+                });
+                if (!response.ok || !response.body) {
+                    const data = await response.json().catch(() => ({}));
+                    failure = data.message || CHAT_FALLBACK;
+                } else {
+                    const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+                    let buffered = '';
+                    for (;;) {
+                        const { value, done } = await reader.read();
+                        if (done) break;
+                        buffered += value;
+                        const lines = buffered.split('\n');
+                        buffered = lines.pop();
+                        lines.filter((line) => line.trim()).forEach((line) => handle(JSON.parse(line)));
+                    }
+                    if (buffered.trim()) handle(JSON.parse(buffered));
+                }
+            } catch (err) {
+                if (!controller.signal.aborted) failure = CHAT_FALLBACK;
+            } finally {
+                replyController = null;
+                showTyping(false);
+                if (replyText) {
+                    saveChatMessage(replyText, 'bot');
+                    if (!controller.signal.aborted) speak(replyText);
+                }
+                // Limits and errors read as a reply from the bot, but aren't kept in the history.
+                if (failure) addChatMessage(failure, 'bot', { save: false });
+                updateSendButton();
+            }
+        }
+
+        function sendChatMessage(text) {
+            text = text.trim().slice(0, MAX_CHARS);
+            if (!text || isReplying()) return;
+            stopListening();
+            chatChips?.remove();
+            addChatMessage(text, 'user');
+            chatInput.value = '';
+            resizeChatInput();
+            streamReply(text);
+        }
+
+        chatLauncher.addEventListener('click', () => setChatOpen(!chatPanel.classList.contains('open')));
+        document.getElementById('chatClose').addEventListener('click', () => setChatOpen(false));
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && chatPanel.classList.contains('open')) setChatOpen(false);
+        });
+
+        chatInput.addEventListener('input', resizeChatInput);
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+                e.preventDefault();
+                sendChatMessage(chatInput.value);
+            }
+        });
+
+        // ---- Voice language: what the mic listens for (English, Hindi or Telugu) ----
+        const chatLang = document.getElementById('chatLang');
+        const VOICE_LANG_KEY = 'nova-chat-voice-lang';
+        const VOICE_LANGS = ['en-IN', 'hi-IN', 'te-IN'];
+
+        function defaultVoiceLang() {
+            try {
+                const saved = localStorage.getItem(VOICE_LANG_KEY);
+                if (VOICE_LANGS.includes(saved)) return saved;
+            } catch { /* storage blocked */ }
+            // Otherwise follow the browser's preferred languages, falling back to Indian English.
+            for (const lang of navigator.languages || [navigator.language]) {
+                const base = String(lang).toLowerCase().split('-')[0];
+                if (base === 'te') return 'te-IN';
+                if (base === 'hi') return 'hi-IN';
+                if (base === 'en') return 'en-IN';
+            }
+            return 'en-IN';
+        }
+
+        chatLang.value = defaultVoiceLang();
+        chatLang.addEventListener('change', () => {
+            try { localStorage.setItem(VOICE_LANG_KEY, chatLang.value); } catch { /* storage blocked */ }
+            chatInput.focus();
+        });
+
+        // ---- Spoken replies: the browser's built-in voice reads bot replies aloud ----
+        const chatSpeaker = document.getElementById('chatSpeaker');
+        const SPEAK_KEY = 'nova-chat-speak-replies';
+        const canSpeak = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+        let speakReplies = false;
+
+        function stopSpeaking() {
+            if (canSpeak) window.speechSynthesis.cancel();
+        }
+
+        // Read each reply in the language it is written in, whatever the mic language is.
+        function speechLangFor(text) {
+            if (/[\u0C00-\u0C7F]/.test(text)) return 'te-IN';   // Telugu script
+            if (/[\u0900-\u097F]/.test(text)) return 'hi-IN';   // Devanagari (Hindi)
+            return 'en-IN';
+        }
+
+        // Exact match first (e.g. "te-IN"), then any voice for the same language (e.g. "te").
+        function pickVoice(lang) {
+            const voices = window.speechSynthesis.getVoices();
+            const norm = (l) => String(l).replace('_', '-').toLowerCase();
+            const base = lang.split('-')[0].toLowerCase();
+            return voices.find((v) => norm(v.lang) === lang.toLowerCase()) ||
+                voices.find((v) => norm(v.lang).split('-')[0] === base) || null;
+        }
+
+        function speak(text) {
+            if (!canSpeak || !speakReplies) return;
+            stopSpeaking();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = speechLangFor(text);
+            const voice = pickVoice(utterance.lang);
+            if (voice) utterance.voice = voice;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function setSpeakReplies(on) {
+            speakReplies = on;
+            chatSpeaker.setAttribute('aria-pressed', String(on));
+            chatSpeaker.setAttribute('aria-label', on ? 'Stop reading replies aloud' : 'Read replies aloud');
+            chatSpeaker.title = on ? 'Replies are read aloud' : 'Read replies aloud';
+            if (!on) stopSpeaking();
+            try { localStorage.setItem(SPEAK_KEY, on ? '1' : '0'); } catch { /* storage blocked */ }
+        }
+
+        chatSpeaker.hidden = !canSpeak;
+        if (canSpeak) {
+            let saved = false;
+            try { saved = localStorage.getItem(SPEAK_KEY) === '1'; } catch { /* storage blocked */ }
+            setSpeakReplies(saved);
+        }
+        chatSpeaker.addEventListener('click', () => setSpeakReplies(!speakReplies));
+
+        // ---- Voice engines: turn speech into text behind the mic button ----
+        //
+        // The mic button only talks to this contract, so the engine can be swapped
+        // (e.g. for server-side transcription) without touching the rest of the chat:
+        //
+        //   isSupported()   true when the engine can run in this browser
+        //   start({ lang, onStart, onText, onError, onEnd })
+        //       onStart()       listening has begun
+        //       onText(text)    everything heard so far; may be called many times
+        //       onError(code)   'blocked' | 'no-mic' | 'network' | 'no-speech' | 'other'
+        //       onEnd()         always called once when listening has finished
+        //   stop()          stop listening; onEnd follows
+        //
+        // Each engine decides when the customer has stopped speaking.
+
+        // Option A: the browser's built-in speech recognition (free; Chrome, Edge, Safari).
+        function createBrowserSpeechEngine({ silenceMs }) {
+            const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            let recognition = null;
+            let silenceTimer = null;
+
+            const ERROR_CODES = {
+                'not-allowed': 'blocked',
+                'service-not-allowed': 'blocked',
+                'audio-capture': 'no-mic',
+                network: 'network',
+                'no-speech': 'no-speech',
+                aborted: 'no-speech',
+            };
+
+            function stop() {
+                clearTimeout(silenceTimer);
+                recognition?.stop();
+            }
+
+            function start({ lang, onStart, onText, onError, onEnd }) {
+                recognition = new Recognition();
+                recognition.lang = lang;
+                recognition.continuous = true;
+                recognition.interimResults = true;
+
+                recognition.onstart = onStart;
+                recognition.onresult = (event) => {
+                    let spoken = '';
+                    for (let i = 0; i < event.results.length; i++) {
+                        spoken += event.results[i][0].transcript;
+                    }
+                    onText(spoken.trim());
+                    // Stop automatically after a pause in speech.
+                    clearTimeout(silenceTimer);
+                    silenceTimer = setTimeout(stop, silenceMs);
+                };
+                recognition.onerror = (event) => onError(ERROR_CODES[event.error] || 'other');
+                recognition.onend = () => {
+                    clearTimeout(silenceTimer);
+                    recognition = null;
+                    onEnd();
+                };
+
+                try {
+                    recognition.start();
+                    // Stop if nothing is said at all.
+                    silenceTimer = setTimeout(stop, silenceMs * 4);
+                } catch {
+                    recognition = null;
+                    onError('other');
+                    onEnd();
+                }
+            }
+
+            return { isSupported: () => Boolean(Recognition), start, stop };
+        }
+
+        // Option B (later): record with MediaRecorder, upload the clip to /api/transcribe,
+        // call onText once with the returned text, then onEnd. It would detect silence
+        // from the audio level and implement the same contract above.
+
+        // ---- Voice input: the mic button fills the text box using the voice engine ----
+        const chatMic = document.getElementById('chatMic');
+        const chatWave = document.getElementById('chatWave');
+        // Setting: true sends the message as soon as the customer stops speaking;
+        // false leaves the words in the box so they can be checked and sent with ➤.
+        const VOICE_AUTO_SEND = false;
+        const SILENCE_MS = 2000;
+        const VOICE_NOTICE_KEY = 'nova-voice-notice-shown';
+        const VOICE_ERROR_NOTES = {
+            blocked: 'Microphone access is blocked. Allow it in your browser settings, or type your message instead.',
+            'no-mic': 'No microphone was found. Please type your message instead.',
+            network: 'Voice input needs an internet connection. Please type your message instead.',
+        };
+        // The one line to change to switch voice engines.
+        const voiceEngine = createBrowserSpeechEngine({ silenceMs: SILENCE_MS });
+        let listening = false;
+        let voiceBaseText = '';
+        let heardSpeech = false;
+        let waveStream = null;
+        let waveAudio = null;
+        let waveFrame = null;
+
+        function addSystemNote(text) {
+            const note = document.createElement('div');
+            note.className = 'chat-system';
+            note.textContent = text;
+            chatMessages.insertBefore(note, chatTyping);
+            trimChatScreen();
+            scrollChatToBottom();
+        }
+
+        function showVoiceNoticeOnce() {
+            let shown = false;
+            try { shown = localStorage.getItem(VOICE_NOTICE_KEY) === '1'; } catch { /* storage blocked */ }
+            if (shown) return;
+            addSystemNote('🎤 Voice is converted to text to answer you.');
+            try { localStorage.setItem(VOICE_NOTICE_KEY, '1'); } catch { /* storage blocked */ }
+        }
+
+        // A real waveform needs a second microphone stream next to speech recognition.
+        // Desktop browsers handle that; on phones it can break recognition, so phones
+        // keep the pulsing mic only.
+        function canShowWaveform() {
+            return Boolean(window.AudioContext && navigator.mediaDevices?.getUserMedia) &&
+                !window.matchMedia('(pointer: coarse)').matches;
+        }
+
+        async function startWaveform() {
+            if (!canShowWaveform()) return;
+            try {
+                waveStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                if (!listening) return stopWaveform(); // stopped while waiting for the mic
+                waveAudio = new AudioContext();
+                const analyser = waveAudio.createAnalyser();
+                analyser.fftSize = 64;
+                waveAudio.createMediaStreamSource(waveStream).connect(analyser);
+                const levels = new Uint8Array(analyser.frequencyBinCount);
+                const ctx = chatWave.getContext('2d');
+                chatWave.hidden = false;
+
+                const draw = () => {
+                    const ratio = window.devicePixelRatio || 1;
+                    const width = chatWave.clientWidth * ratio;
+                    const height = chatWave.clientHeight * ratio;
+                    if (chatWave.width !== width) chatWave.width = width;
+                    if (chatWave.height !== height) chatWave.height = height;
+
+                    analyser.getByteFrequencyData(levels);
+                    ctx.clearRect(0, 0, width, height);
+                    ctx.fillStyle = '#e5484d';
+                    const bars = levels.length;
+                    const gap = 3 * ratio;
+                    const barWidth = (width - gap * (bars + 1)) / bars;
+                    for (let i = 0; i < bars; i++) {
+                        const barHeight = Math.max(2 * ratio, (levels[i] / 255) * (height - 8 * ratio));
+                        ctx.fillRect(gap + i * (barWidth + gap), (height - barHeight) / 2, barWidth, barHeight);
+                    }
+                    waveFrame = requestAnimationFrame(draw);
+                };
+                draw();
+            } catch {
+                stopWaveform(); // no waveform; the pulsing mic still shows listening
+            }
+        }
+
+        function stopWaveform() {
+            cancelAnimationFrame(waveFrame);
+            waveFrame = null;
+            waveStream?.getTracks().forEach((track) => track.stop());
+            waveStream = null;
+            waveAudio?.close();
+            waveAudio = null;
+            chatWave.hidden = true;
+        }
+
+        function setListening(on) {
+            listening = on;
+            chatMic.classList.toggle('listening', on);
+            chatMic.setAttribute('aria-pressed', String(on));
+            chatMic.setAttribute('aria-label', on ? 'Stop voice input' : 'Start voice input');
+            chatInput.placeholder = on ? 'Listening… speak now' : 'Type your message…';
+        }
+
+        function stopListening() {
+            if (listening) voiceEngine.stop();
+        }
+
+        function startListening() {
+            if (listening || !voiceEngine.isSupported()) return;
+
+            stopSpeaking();
+            showVoiceNoticeOnce();
+            voiceBaseText = chatInput.value.trim();
+            heardSpeech = false;
+            listening = true; // set before start() so a fast onEnd can't leave the button stuck
+
+            voiceEngine.start({
+                lang: chatLang.value,
+                onStart: () => {
+                    setListening(true);
+                    startWaveform();
+                },
+                onText: (spoken) => {
+                    if (spoken) heardSpeech = true;
+                    chatInput.value = [voiceBaseText, spoken].filter(Boolean).join(' ').slice(0, MAX_CHARS);
+                    resizeChatInput();
+                },
+                onError: (code) => {
+                    // 'no-speech' and 'other' just return quietly to idle.
+                    if (VOICE_ERROR_NOTES[code]) addSystemNote(VOICE_ERROR_NOTES[code]);
+                },
+                onEnd: () => {
+                    stopWaveform();
+                    setListening(false);
+                    if (VOICE_AUTO_SEND && heardSpeech && chatInput.value.trim()) {
+                        sendChatMessage(chatInput.value);
+                    } else {
+                        chatInput.focus();
+                    }
+                },
+            });
+        }
+
+        // Show the mic only where it can work: the browser supports speech recognition
+        // and the page is served securely (HTTPS, or localhost while developing).
+        chatMic.hidden = !voiceEngine.isSupported() || !window.isSecureContext;
+        document.getElementById('chatLangWrap').hidden = chatMic.hidden;
+        chatMic.addEventListener('click', () => (listening ? stopListening() : startListening()));
+
+        // The same button sends (➤) or stops the reply (■); Enter only ever sends.
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (isReplying()) stopReply();
+            else sendChatMessage(chatInput.value);
+        });
+
+        chatChips.addEventListener('click', (e) => {
+            if (e.target.classList.contains('chat-chip')) sendChatMessage(e.target.textContent);
+        });
+
+        restoreChatSession();
     </script>
 </body>
 </html>
