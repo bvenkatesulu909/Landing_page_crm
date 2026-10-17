@@ -340,12 +340,14 @@ async function reply({ chat, message, send, signal }) {
             roundText += finalText;
             send({ type: "text", text: separator + finalText });
         }
-        // Still nothing to say and no tool call: record what came back, so the cause shows in the logs.
-        if (!roundText.trim() && !response.content.some((b) => b.type === "tool_use")) {
-            console.warn("chat: empty reply", JSON.stringify({
+        // Record each round that produced no visible text, so the cause shows in the logs.
+        if (!roundText.trim()) {
+            console.error("chat: no text this round", JSON.stringify({
                 model,
+                round,
                 stop_reason: response.stop_reason,
                 blocks: response.content.map((b) => b.type),
+                tool_names: response.content.filter((b) => b.type === "tool_use").map((b) => b.name),
                 output_tokens: response.usage?.output_tokens,
             }));
         }
